@@ -48,9 +48,9 @@ er = 1.0;
 ur = 1.0;
 
 % Time step (according to Courant Condition)
-dt = min(min(dx, dy), dz) / 2.0 / c0; % single time step in seconds
-steps = 500; % total simulation steps
-timestamps = (0:dt:(steps - 1) * dt) .* 1e9; % each time step in nanoseconds
+dt = min(min(dx, dy), dz) / 2.0 / c0; % Single time step in seconds
+steps = 1000; % Total simulation steps
+t = (0:dt:(steps - 1) * dt); % Each time step
 
 % Initialize materials to free space
 ER = ones(1, Nz) .* er;
@@ -60,16 +60,24 @@ UR = ones(1, Nz) .* ur;
 mEy = (c0 * dt) ./ ER / dz;
 mHx = (c0 * dt) ./ UR / dz;
 
+% Initialize H and E fields to zeros
 Hx = zeros(1, Nz);
 Ey = zeros(1, Nz);
 
-% For perfect boundary conditions
+% Initialize variables for perfect boundary conditions
 h1 = 0; h2 = 0;
 e1 = 0; e2 = 0;
 
+%% Describe source
+fmax = 5e10; % Max frequency we're interested in
+tau = 0.5 / fmax; % Pulse width coefficient
+t0 = 6 * tau; % Pulse offset
+g = exp(-((t - t0) ./ tau ) .^ 2); % Create gaussian pulse
+% plot(g);
+
 %% Main FDTD Loop
 for T = 1 : steps
-    h2 = h1; h1 = Hx(1); % Record boundary Hx that we'll use 2 steps later
+    h2 = h1; h1 = Hx(1); % Record boundary H that we'll use 2 steps later
     % Update H from E
     for nz = 1 : Nz - 1
         Hx(nz) = Hx(nz) + mHx(nz) * (Ey(nz+1) - Ey(nz));
@@ -78,9 +86,17 @@ for T = 1 : steps
     
 
     % Update E from H
-    e2 = e1; e1 = Ey(Nz); % Record boundary Ex that we'll use 2 steps later
+    e2 = e1; e1 = Ey(Nz); % Record boundary E that we'll use 2 steps later
     Ey(1) = Ey(1) + mEy(1) * (h2 - Hx(1)); % Perfect boundary condition
     for nz = 2 : Nz
         Ey(nz) = Ey(nz) + mEy(nz) * (Hx(nz) - Hx(nz-1));
     end
+
+    % Inject source
+    Ey(nz) = Ey(nz) + g(T);
+
+    % Visualize E and H
+    figure
+    plot(Ey)
+    plot(Hx)
 end
