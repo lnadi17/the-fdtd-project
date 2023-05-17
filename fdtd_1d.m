@@ -49,7 +49,7 @@ ur = 1.0;
 
 % Time step (according to Courant Condition)
 dt = min(min(dx, dy), dz) / 2.0 / c0; % Single time step in seconds
-steps = 4000; % Total simulation steps
+steps = 2000; % Total simulation steps
 t = (0:dt:(steps - 1) * dt); % Each time step
 
 % Initialize materials to free space
@@ -83,12 +83,12 @@ for T = 1 : steps
     for nz = 1 : Nz - 1
         Hx(nz) = Hx(nz) + mHx(nz) * (Ey(nz+1) - Ey(nz));
     end
-    Hx(Nz) = Hx(Nz) + mHx(nz) * (0 - Ey(Nz)); % Perfect boundary condition
+    Hx(Nz) = Hx(Nz) + mHx(nz) * (e2 - Ey(Nz)); % Perfect boundary condition
 
 
     % Update E from H
     e2 = e1; e1 = Ey(Nz); % Record boundary E that we'll use 2 steps later
-    Ey(1) = Ey(1) + mEy(1) * (Hx(1) - 0); % Perfect boundary condition
+    Ey(1) = Ey(1) + mEy(1) * (Hx(1) - h2); % Perfect boundary condition
     for nz = 2 : Nz
         Ey(nz) = Ey(nz) + mEy(nz) * (Hx(nz) - Hx(nz-1));
     end
