@@ -19,23 +19,6 @@ dx = Sx/Nx;
 dy = Sy/Ny;
 dz = Sz/Nz;
 
-%% Define Rectangle Geometry
-wx = 0.2;
-wy = 0.6;
-
-% Compute position indices
-nx = round(wx/dx);
-nx1 = 1 + floor((Nx - nx)/2);
-nx2 = nx1 + nx - 1;
-
-ny = round(wy/dy);
-ny1 = 1 + floor((Ny - ny)/2);
-ny2 = ny1 + ny - 1;
-
-% Create A
-A = zeros(Nx,Ny);
-A(nx1:nx2,ny1:ny2) = 1;
-
 %% Define Physical Parameters
 
 % Speed of light
@@ -72,6 +55,7 @@ e1 = 0; e2 = 0;
 fmax = 1e10; % Max frequency we're interested in
 tau = 0.5 / fmax; % tau, aka FWHM (Full Width at Half Maximum)
 t0 = 6 * tau; % Pulse offset
+
 gaussian = exp(-((t - t0) ./ tau ) .^ 2); % Gaussian pulse
 harmonic = 0.5 * sin(2 * pi * 1e9 * t); % 10 GHz harmonic source
 
@@ -79,8 +63,8 @@ harmonic = 0.5 * sin(2 * pi * 1e9 * t); % 10 GHz harmonic source
 pulse = gaussian;
 
 %% Main FDTD Loop
-jump = 10;
-prompt = false;
+jump = 20;
+prompt = true;
 figure;
 
 for T = 1 : steps
@@ -89,20 +73,23 @@ for T = 1 : steps
     for nz = 1 : Nz - 1
         Hx(nz) = Hx(nz) + mHx(nz) * (Ey(nz+1) - Ey(nz));
     end
-    Hx(Nz) = Hx(Nz) + mHx(nz) * (0 - Ey(Nz)); % Perfect boundary condition
-
+    Hx(Nz) = Hx(Nz) + mHx(nz) * (e2 - Ey(Nz)); % Perfect boundary condition
 
     % Update E from H
     e2 = e1; e1 = Ey(Nz); % Record boundary E that we'll use 2 steps later
-    Ey(1) = Ey(1) + mEy(1) * (Hx(1) - 0); % Perfect boundary condition
+    Ey(1) = Ey(1) + mEy(1) * (Hx(1) - h2); % Perfect boundary condition
     for nz = 2 : Nz
         Ey(nz) = Ey(nz) + mEy(nz) * (Hx(nz) - Hx(nz-1));
     end
 
     % Inject source
-    nzsrc = Nz / 2; % Source is in the middle
-    Ey(nzsrc) = Ey(nzsrc) + pulse(T); % Soft Source
-    % Ey(nzsrc) = pulse(T); % Hard Source
+    nzsrc = Nz / 4; % Source is at the quarter of the length
+    
+    % Soft source
+    Ey(nzsrc) = Ey(nzsrc) + pulse(T);
+
+    % Hard Source
+    % Ey(nzsrc) = pulse(T);
 
     % Visualize E and H (not necessarily every step)
     if mod(T, jump) == 0
