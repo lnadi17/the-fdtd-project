@@ -24,12 +24,15 @@ ur = 1.0;
 
 % Time step (according to Courant Condition)
 dt = dz / 2.0 / c0; % Single time step in seconds
-steps = 3000; % Total simulation steps
+steps = 10000; % Total simulation steps
 t = (0:dt:(steps - 1) * dt); % Each time step
 
 % Initialize materials to free space
 ER = ones(1, Nz) .* er;
 UR = ones(1, Nz) .* ur;
+
+% Define geometry
+ER(Nz/2+1:Nz/2+400) = ones(1, 400) .* 4;
 
 % Compute update coefficients (only for z direction)
 mEy = (c0 * dt) ./ ER / dz;
