@@ -104,6 +104,7 @@ for T = 1 : steps
         hold on;
         plot(Ey, 'LineWidth', 2);
         plot(Hx, 'LineWidth', 2);
+        rectangle('Position', [Nz/2, -1.5, 400, 3], 'FaceColor', [0, 0, 1, 0.3], 'EdgeColor', 'none');
         ylim([-1.5, 1.5]);
         xlim([0, Nz]);
         title(['Step ', num2str(T)])
