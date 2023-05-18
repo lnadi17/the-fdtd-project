@@ -7,16 +7,8 @@
 % NOTE: If our simulation has critical dimensions, snapping grid to these
 % dimensions should be considered.
 
-Sx = 1; % Physical size along x
-Sy = 1; % Physical size along y
 Sz = 1; % Physical size along z
-
-Nx = 1000; % Number of cells along x
-Ny = 1000; % Number of cells along y
 Nz = 1000; % Number of cells along z
-
-dx = Sx/Nx;
-dy = Sy/Ny;
 dz = Sz/Nz;
 
 %% Define Physical Parameters
@@ -31,7 +23,7 @@ er = 1.0;
 ur = 1.0;
 
 % Time step (according to Courant Condition)
-dt = min(min(dx, dy), dz) / 2.0 / c0; % Single time step in seconds
+dt = dz / 2.0 / c0; % Single time step in seconds
 steps = 3000; % Total simulation steps
 t = (0:dt:(steps - 1) * dt); % Each time step
 
@@ -53,7 +45,7 @@ e1 = 0; e2 = 0;
 
 %% Describe source
 fmax = 1e10; % Max frequency we're interested in
-tau = 0.5 / fmax; % tau, aka FWHM (Full Width at Half Maximum)
+tau = 0.5 / fmax; % FWHM (Full Width at Half Maximum)
 t0 = 6 * tau; % Pulse offset
 th = t + dt + dt/2;
 
@@ -69,7 +61,7 @@ pulseH = gaussianH;
 
 %% Main FDTD Loop
 jump = 20;
-prompt = true;
+prompt = false;
 figure;
 
 for T = 1 : steps
@@ -100,18 +92,19 @@ for T = 1 : steps
     % Hard Source
     % Ey(nzsrc) = pulse(T);
 
-    Ey(Nz/2) = 0;
+    % Try to put metal in the center
+    % Ey(Nz/2) = 0;
 
     % Visualize E and H (not necessarily every step)
     if mod(T, jump) == 0
         clf;
         hold on;
-        plot(Ey);
-        plot(Hx);
+        plot(Ey, 'LineWidth', 2);
+        plot(Hx, 'LineWidth', 2);
         ylim([-1.5, 1.5]);
         xlim([0, Nz]);
         title(['Step ', num2str(T)])
-        pause(0.05);
+        pause(0);
     end
 
     if T == 500 && prompt == true
