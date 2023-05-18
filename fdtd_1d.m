@@ -55,12 +55,17 @@ e1 = 0; e2 = 0;
 fmax = 1e10; % Max frequency we're interested in
 tau = 0.5 / fmax; % tau, aka FWHM (Full Width at Half Maximum)
 t0 = 6 * tau; % Pulse offset
+th = t + dt + dt/2;
 
+% These sources only work for Ey/Hx mode, and if the source is in the free space
 gaussian = exp(-((t - t0) ./ tau ) .^ 2); % Gaussian pulse
-harmonic = 0.5 * sin(2 * pi * 1e9 * t); % 10 GHz harmonic source
+gaussianH = -exp(-((th - t0) ./ tau) .^ 2); % Gaussian pulse for directional source H
+harmonic = 0.5 * sin(2 * pi * 1e9 * t); % 1 GHz harmonic source
+harmonicH = -0.5 * sin(2 * pi * 1e9 * th); % 1 GHz harmonic source for directional source H
 
 % Choose the desired pulse for simulation
 pulse = gaussian;
+pulseH = gaussianH;
 
 %% Main FDTD Loop
 jump = 20;
@@ -85,11 +90,17 @@ for T = 1 : steps
     % Inject source
     nzsrc = Nz / 4; % Source is at the quarter of the length
     
+    % Directional source
+    Hx(nzsrc - 1) = Hx(nzsrc - 1) - mHx(nzsrc - 1) * pulse(T);
+    Ey(nzsrc) = Ey(nzsrc) - mEy(nzsrc) * pulseH(T);
+
     % Soft source
-    Ey(nzsrc) = Ey(nzsrc) + pulse(T);
+    % Ey(nzsrc) = Ey(nzsrc) + pulse(T);
 
     % Hard Source
     % Ey(nzsrc) = pulse(T);
+
+    Ey(Nz/2) = 0;
 
     % Visualize E and H (not necessarily every step)
     if mod(T, jump) == 0
