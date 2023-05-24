@@ -28,7 +28,7 @@ t0 = 20;
 spread = 6.0;
 
 % Simulation
-steps = 500;
+steps = 150;
 
 %% Main Loop
 for T = 1 : steps
@@ -66,10 +66,10 @@ for T = 1 : steps
     end
 
     % PECs at the boundaries
-    Dz(1, :) = 0;
-    Dz(Nx, :) = 0;
-    Dz(:, 1) = 0;
-    Dz(:, Ny) = 0;
+    % Dz(1, :) = 0;
+    % Dz(Nx, :) = 0;
+    % Dz(:, 1) = 0;
+    % Dz(:, Ny) = 0;
 
     imagesc(xa, ya, Dz');
     colormap 'jet';
