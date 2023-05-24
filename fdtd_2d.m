@@ -75,6 +75,9 @@ for T = 1 : steps
     colormap 'jet';
     clim([-1 1]);
     colorbar;
-    pause(0.1);
+    title(['FDTD Simulation (Time step: ', num2str(T), '/', num2str(steps), ')']);
+    xlabel('X');
+    ylabel('Y');
+    drawnow;
 end
 
