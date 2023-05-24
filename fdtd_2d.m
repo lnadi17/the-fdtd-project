@@ -43,6 +43,12 @@ for T = 1 : steps
     pulse = 10 * exp(-0.5*(((t0 - T) / spread)^2));
     Dz(Nx/2, Ny/2) = Dz(Nx/2, Ny/2) + pulse;
 
+    % PECs at the boundaries
+    Dz(1, :) = 0;
+    Dz(Nx, :) = 0;
+    Dz(:, 1) = 0;
+    Dz(:, Ny) = 0;
+
     % Calculate Ez Field
     for i = 1 : Nx
         for j = 1 : Ny
@@ -64,12 +70,6 @@ for T = 1 : steps
             Hy(i, j) = Hy(i, j) + 0.5 * (Ez(i+1, j) - Ez(i, j));
         end
     end
-
-    % PECs at the boundaries
-    % Dz(1, :) = 0;
-    % Dz(Nx, :) = 0;
-    % Dz(:, 1) = 0;
-    % Dz(:, Ny) = 0;
 
     imagesc(xa, ya, Dz');
     colormap 'jet';
