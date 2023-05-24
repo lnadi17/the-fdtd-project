@@ -28,7 +28,13 @@ t0 = 20;
 spread = 6.0;
 
 % Simulation
-steps = 1000;
+steps = 500;
+
+% Exporter
+videoFile = 'simulation_movie2.mp4';
+videoObj = VideoWriter(videoFile, 'MPEG-4');
+videoObj.FrameRate = 30;
+open(videoObj);
 
 %% Main Loop
 for T = 1 : steps
@@ -43,15 +49,27 @@ for T = 1 : steps
     % pulse = 10 * exp(-0.5*(((t0 - T) / spread)^2));
     % Dz(Nx/2, Ny/2) = Dz(Nx/2, Ny/2) + pulse;
 
-    % Put a first sinusoidal source
     freq = 1e9;
-    pulse = 10 * sin(2 * pi * freq * T * dt);
-    Dz(Nx/4, Ny/4) = Dz(Nx/4, Ny/4) + pulse;
+    lambda = c0/freq;
+    radius = lambda;
 
-    % Put a second sinusoidal source
-    freq = 1e9;
-    pulse = 10 * sin(2 * pi * freq * T * dt);
-    Dz(Nx/4, 3*Ny/4) = Dz(Nx/4, 3*Ny/4) + pulse;
+    center = [Nx/2, Ny/2];
+    for i = 1 : Nx
+        for j = 1 : Ny
+            dist = sqrt(((center(1) - i)*dx)^2 + ((center(2) - j)*dy)^2);
+            if abs(dist - radius) <= 3 * dx
+                % Calculate angle in degrees (-180 to 180)
+                deg = rad2deg(angle((i - center(1)) + 1j * (j - center(2))));
+                phase = deg / 2;
+                amplitude = -(deg/180)^2 + 1.5;
+                sigmoid = 1 ./ (1 + exp(-0.1*(T - 50)));
+
+                % Inject hard source (simulating metal)
+                pulse = 10 * sin(2 * pi * freq * T * dt + phase);
+                Dz(i, j) = amplitude * sigmoid * pulse;
+            end
+        end
+    end
 
     % PECs at the boundaries
     Dz(1, :) = 0;
@@ -81,13 +99,19 @@ for T = 1 : steps
         end
     end
 
-    imagesc(xa, ya, Dz');
-    colormap('hot');
-    clim([-1 1]);
-    colorbar;
-    title(['FDTD Simulation (Time step: ', num2str(T), '/', num2str(steps), ')']);
-    xlabel('X');
-    ylabel('Y');
-    drawnow;
+    if mod(T, 1) == 0
+        imagesc(xa, ya, Dz');
+        colormap('parula');
+        clim([-1 1]);
+        colorbar;
+        title(['FDTD Simulation (Time step: ', num2str(T), '/', num2str(steps), ')']);
+        xlabel('X');
+        ylabel('Y');
+        drawnow;
+        writeVideo(videoObj, getframe(gcf));
+    end
 end
+
+%% Deinitalization
+close(videoObj);
 
