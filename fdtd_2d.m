@@ -1,5 +1,5 @@
 %% Define Grid
-Nx = 100; Ny = 100;
+Nx = 500; Ny = 500;
 dx = 0.01;
 dy = 0.01;
 Sx = Nx*dx;
@@ -28,7 +28,7 @@ t0 = 20;
 spread = 6.0;
 
 % Simulation
-steps = 150;
+steps = 1000;
 
 %% Main Loop
 for T = 1 : steps
@@ -40,8 +40,18 @@ for T = 1 : steps
     end
 
     % Put a Gaussian pulse in the middle
-    pulse = 10 * exp(-0.5*(((t0 - T) / spread)^2));
-    Dz(Nx/2, Ny/2) = Dz(Nx/2, Ny/2) + pulse;
+    % pulse = 10 * exp(-0.5*(((t0 - T) / spread)^2));
+    % Dz(Nx/2, Ny/2) = Dz(Nx/2, Ny/2) + pulse;
+
+    % Put a first sinusoidal source
+    freq = 1e9;
+    pulse = 10 * sin(2 * pi * freq * T * dt);
+    Dz(Nx/4, Ny/4) = Dz(Nx/4, Ny/4) + pulse;
+
+    % Put a second sinusoidal source
+    freq = 1e9;
+    pulse = 10 * sin(2 * pi * freq * T * dt);
+    Dz(Nx/4, 3*Ny/4) = Dz(Nx/4, 3*Ny/4) + pulse;
 
     % PECs at the boundaries
     Dz(1, :) = 0;
@@ -72,7 +82,7 @@ for T = 1 : steps
     end
 
     imagesc(xa, ya, Dz');
-    colormap 'jet';
+    colormap('hot');
     clim([-1 1]);
     colorbar;
     title(['FDTD Simulation (Time step: ', num2str(T), '/', num2str(steps), ')']);
