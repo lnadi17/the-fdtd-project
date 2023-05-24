@@ -23,36 +23,119 @@ Ez = zeros(Nx, Ny);
 Dz = zeros(Nx, Ny);
 Ga = ones(Nx, Ny);
 
+URxx = ones(Nx, Ny);
+URyy = ones(Nx, Ny);
+mEz1 = ones(Nx, Ny);
+
 % Source
 t0 = 20;
 spread = 6.0;
 
 % Simulation
-steps = 500;
+steps = 1000;
+
+% Perfectly Matched Layer
+Nx2 = 2*Nx;
+Ny2 = 2*Ny;
+NPML = [20 21 22 23];
+
+sigx = zeros(Nx2,Ny2);
+for nx = 1 : 2*NPML(1)
+    nx1 = 2*NPML(1) - nx + 1;
+    sigx(nx1,:) = (0.5*e0/dt)*(nx/2/NPML(1))^3;
+end
+for nx = 1 : 2*NPML(2)
+    nx1 = Nx2 - 2*NPML(2) + nx;
+    sigx(nx1,:) = (0.5*e0/dt)*(nx/2/NPML(2))^3;
+end
+sigy = zeros(Nx2,Ny2);
+for ny = 1 : 2*NPML(3)
+    ny1 = 2*NPML(3) - ny + 1;
+    sigy(:,ny1) = (0.5*e0/dt)*(ny/2/NPML(3))^3;
+end
+for ny = 1 : 2*NPML(4)
+    ny1 = Ny2 - 2*NPML(4) + ny;
+    sigy(:,ny1) = (0.5*e0/dt)*(ny/2/NPML(4))^3;
+end
+
+% Update coefficients
+sigHx = sigx(1:2:Nx2,2:2:Ny2);
+sigHy = sigy(1:2:Nx2,2:2:Ny2);
+
+mHx0 = (1/dt) + sigHy/(2*e0);
+mHx1 = ((1/dt) - sigHy/(2*e0))./mHx0;
+mHx2 = -c0./URxx./mHx0;
+mHx3 = -(c0*dt/e0)*sigHx./URxx./mHx0;
+
+sigHx = sigx(2:2:Nx2,1:2:Ny2);
+sigHy = sigy(2:2:Nx2,1:2:Ny2);
+
+mHy0 = (1/dt) + sigHx/(2*e0);
+mHy1 = ((1/dt) - sigHx/(2*e0))./mHy0;
+mHy2 = - c0./URyy./mHy0;
+mHy3 = - (c0*dt/e0) * sigHy./URyy./mHy0;
+
+sigDx = sigx(1:2:Nx2,1:2:Ny2);
+sigDy = sigy(1:2:Nx2,1:2:Ny2);
+
+mDz0 = (1/dt) + (sigDx + sigDy)/(2*e0) + sigDx.*sigDy*(dt/4/e0^2);
+mDz1 = (1/dt) - (sigDx + sigDy)/(2*e0) - sigDx.*sigDy*(dt/4/e0^2);
+mDz1 = mDz1 ./ mDz0;
+mDz2 = c0./mDz0;
+mDz4 = - (dt/e0^2)*sigDx.*sigDy./mDz0;
+
+IDz = zeros(Nx, Ny);
+ICEy = zeros(Nx, Ny);
+ICEx = zeros(Nx, Ny);
+
+CEx = zeros(Nx, Ny);
+CEy = zeros(Nx, Ny);
+CHz = zeros(Nx, Ny);
 
 % Exporter
-videoFile = 'simulation_movie2.mp4';
+videoFile = 'simulation_movie3.mp4';
 videoObj = VideoWriter(videoFile, 'MPEG-4');
 videoObj.FrameRate = 30;
 open(videoObj);
 
 %% Main Loop
 for T = 1 : steps
+    % Update curls of Ex and Ey
+    % Compute CEx
+    CEx(1:Nx,1:Ny-1) = (Ez(1:Nx,2:Ny)-Ez(1:Nx,1:Ny-1))/dy;
+    CEx(1:Nx,Ny) = -Ez(1:Nx,Ny)/dy;
+
+    % Compute CEy
+    CEy(1:Nx-1,1:Ny) = -1*(Ez(2:Nx,1:Ny) - Ez(1:Nx-1,1:Ny))/dx;
+    CEy(Nx,1:Ny) = (Ez(Nx,1:Ny))/dx;
+
+    % Update H integrations
+    ICEx = ICEx + CEx;
+    ICEy = ICEy + CEy;
+
+    % Calculate Hx Field
+    Hx = mHx1 .* Hx + mHx2 .* CEx + mHx3 .* ICEx;
+
+    % Calculate Hy Field
+    Hy = mHy1 .* Hy + mHy2 .* CEy + mHy3 .* ICEy;
+
+    % Compute curl of H
+    CHz(1,1) = (Hy(1,1))/dx - (Hx(1,1))/dy;
+    CHz(2:Nx,1) = (Hy(2:Nx,1) - Hy(1:Nx-1,1))/dx - (Hx(2:Nx,1))/dy;
+    CHz(1,2:Ny) = (Hy(1,2:Ny))/dx - (Hx(1,2:Ny) - Hx(1,1:Ny-1))/dy;
+    CHz(2:Nx,2:Ny) = (Hy(2:Nx,2:Ny) - Hy(1:Nx-1,2:Ny))/dx - ...
+        (Hx(2:Nx,2:Ny) - Hx(2:Nx,1:Ny-1))/dy;
+
+    % Update D integrations
+    IDz = IDz + Dz;
+
     % Calculate Dz Field
-    for i = 2 : Nx
-        for j = 2 : Ny
-            Dz(i, j) = Dz(i, j) + 0.5 * (Hy(i, j) - Hy(i-1, j) - Hx(i, j) + Hx(i, j-1));
-        end
-    end
+    Dz = mDz1 .* Dz + mDz2 .* CHz + mDz4 .* IDz;
 
-    % Put a Gaussian pulse in the middle
-    % pulse = 10 * exp(-0.5*(((t0 - T) / spread)^2));
-    % Dz(Nx/2, Ny/2) = Dz(Nx/2, Ny/2) + pulse;
-
+    % Inject circular source
     freq = 1e9;
     lambda = c0/freq;
     radius = lambda;
-
     center = [Nx/2, Ny/2];
     for i = 1 : Nx
         for j = 1 : Ny
@@ -71,33 +154,8 @@ for T = 1 : steps
         end
     end
 
-    % PECs at the boundaries
-    Dz(1, :) = 0;
-    Dz(Nx, :) = 0;
-    Dz(:, 1) = 0;
-    Dz(:, Ny) = 0;
-
     % Calculate Ez Field
-    for i = 1 : Nx
-        for j = 1 : Ny
-            Ez(i, j) = Ga(i, j) * Dz(i, j);
-        end
-    end
-
-    % Calculate Hx Field
-    for i = 1 : Nx - 1
-        for j = 1 : Ny - 1
-            Hx(i, j) = Hx(i, j) + 0.5 * (Ez(i, j) - Ez(i, j+1));
-        end
-    end
-    
-
-    % Calculate Hy Field
-    for i = 1 : Nx - 1
-        for j = 1 : Ny - 1
-            Hy(i, j) = Hy(i, j) + 0.5 * (Ez(i+1, j) - Ez(i, j));
-        end
-    end
+    Ez = mEz1.*Dz;
 
     if mod(T, 1) == 0
         imagesc(xa, ya, Dz');
