@@ -1,7 +1,7 @@
 %% Define Grid
-Nx = 500; Ny = 500;
-dx = 0.01;
-dy = 0.01;
+Nx = 1000; Ny = 1000;
+dx = 0.005;
+dy = 0.005;
 Sx = Nx*dx;
 Sy = Ny*dy;
 
@@ -27,12 +27,33 @@ URxx = ones(Nx, Ny);
 URyy = ones(Nx, Ny);
 mEz1 = ones(Nx, Ny);
 
+% Detector
+startstep = 1000;
+center = [Nx/2, Ny/2];
+detectorvalues = -ones(Nx, Ny);
+detectorangles = zeros(Nx, Ny);
+for i = 1 : Nx
+    for j = 1 : Ny
+        sqrdist = (i-center(1))^2 + (j-center(2))^2;
+        if abs(sqrdist - 400^2) <= 1000
+            detectorvalues(i, j) = 0;
+            detectorangles(i, j) = angle((i - center(1)) + 1j * (j - center(2)));
+        end
+    end
+end
+
 % Source
 t0 = 20;
 spread = 6.0;
+beta = 0; % Second source's phase
+freq = 1e9;
+lambda = c0/freq;
+radius = lambda;
+center1 = [Nx/2, Ny/2 + 3 * radius/dx];
+center2 = [Nx/2, Ny/2 - 3 * radius/dx];
 
 % Simulation
-steps = 1000;
+steps = 3000;
 
 % Perfectly Matched Layer
 Nx2 = 2*Nx;
@@ -133,16 +154,11 @@ for T = 1 : steps
     Dz = mDz1 .* Dz + mDz2 .* CHz + mDz4 .* IDz;
 
     % Inject circular source
-    freq = 1e9;
-    lambda = c0/freq;
-    radius = lambda;
-    center1 = [Nx/2, Ny/2 + 1.5 * radius/dx];
-    center2 = [Nx/2, Ny/2 - 1.5 * radius/dx];
     for i = 1 : Nx
         for j = 1 : Ny
             dist1 = sqrt(((center1(1) - i)*dx)^2 + ((center1(2) - j)*dy)^2);
             dist2 = sqrt(((center2(1) - i)*dx)^2 + ((center2(2) - j)*dy)^2);
-            if abs(dist1 - radius) <= 3 * dx
+            if abs(dist1 - radius) <= 6 * dx
                 % Calculate angle in degrees (-180 to 180)
                 deg = rad2deg(angle((i - center1(1)) + 1j * (j - center1(2))));
                 phase = deg / 2;
@@ -153,7 +169,7 @@ for T = 1 : steps
                 pulse = 10 * sin(2 * pi * freq * T * dt + phase);
                 Dz(i, j) = amplitude * sigmoid * pulse;
             end
-            if abs(dist2 - radius) <= 3 * dx
+            if abs(dist2 - radius) <= 6 * dx
                 % Calculate angle in degrees (-180 to 180)
                 deg = rad2deg(angle((i - center2(1)) + 1j * (j - center2(2))));
                 phase = deg / 2;
@@ -161,7 +177,7 @@ for T = 1 : steps
                 sigmoid = 1 ./ (1 + exp(-0.1*(T - 50)));
 
                 % Inject hard source (simulating metal)
-                pulse = 10 * sin(2 * pi * freq * T * dt + phase);
+                pulse = 10 * sin(2 * pi * freq * T * dt + phase + beta);
                 Dz(i, j) = amplitude * sigmoid * pulse;
             end
         end
@@ -169,6 +185,17 @@ for T = 1 : steps
 
     % Calculate Ez Field
     Ez = mEz1 .* Dz;
+
+    % Start detector when step count reaches specific value
+    if T >= startstep
+        for i = 1 : Nx
+            for j = 1 : Ny
+                if detectorvalues(i, j) >= 0
+                    detectorvalues(i, j) = detectorvalues(i, j) + abs(Dz(i, j));
+                end
+            end
+        end
+    end
 
     if mod(T, 1) == 0
         imagesc(xa, ya, Dz');
@@ -183,6 +210,22 @@ for T = 1 : steps
     end
 end
 
-%% Deinitalization
+%% Post Processing
 close(videoObj);
+
+a = [];
+detectorvalues = detectorvalues ./ (steps - startstep);
+for i = 1 : Nx
+    for j = 1 : Ny
+        if detectorvalues(i, j) > 0
+            a = [a; [detectorangles(i, j), detectorvalues(i, j)]];
+        end
+    end
+end
+
+[G, aa] = findgroups(a(:, 1));
+b = [aa, splitapply(@mean, a(:, 2), G)];
+polarplot(b(:, 1), b(:, 2))
+
+
 
