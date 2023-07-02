@@ -38,7 +38,7 @@ Anyone can customize the parameters, experiment with different configurations an
   
 - **User Interaction:** This feature works just the same as the 1D simulation counterpart.
   
-- **Perfecty Matched Layer:** A Perfectly Matched Layer (PML) is implemented to absorb outgoing waves effectively.
+- **Perfectly Matched Layer:** A Perfectly Matched Layer (PML) is implemented to absorb outgoing waves effectively.
   
 - **Detector:** The 2D FDTD simulation includes a detector feature that captures the average power direction during the simulation. It accumulates the absolute values of the Dz field at each grid point. After the simulation, the detector values are normalized and shown as a graph.
 
