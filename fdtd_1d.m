@@ -67,6 +67,12 @@ harmonicH = -1 * sin(2 * pi * 700e6 * th); % 700 MHz harmonic source for directi
 pulse = harmonic;
 pulseH = harmonicH;
 
+% Exporter
+videoFile = 'simulation_movie_1d.mp4';
+videoObj = VideoWriter(videoFile, 'MPEG-4');
+videoObj.FrameRate = 30;
+open(videoObj);
+
 %% Main FDTD Loop
 jump = 1;
 prompt = false;
@@ -113,7 +119,8 @@ for T = 1 : steps
         ylim([-1.5, 1.5]);
         xlim([0, Nz]);
         title(['Step ', num2str(T)])
-        pause(0);
+        drawnow;
+        writeVideo(videoObj, getframe(gcf));
     end
 
     if T == 500 && prompt == true
@@ -126,3 +133,7 @@ for T = 1 : steps
         end
     end
 end
+
+%%
+
+close(videoObj);
