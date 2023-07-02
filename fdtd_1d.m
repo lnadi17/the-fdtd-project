@@ -64,8 +64,8 @@ harmonic = 1 * sin(2 * pi * 700e6 * t); % 700 MHz harmonic source
 harmonicH = -1 * sin(2 * pi * 700e6 * th); % 700 MHz harmonic source for directional source H
 
 % Choose the desired pulse for simulation
-pulse = gaussian;
-pulseH = gaussianH;
+pulse = harmonic;
+pulseH = harmonicH;
 
 %% Main FDTD Loop
 jump = 1;
