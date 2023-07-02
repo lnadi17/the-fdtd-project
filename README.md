@@ -3,9 +3,15 @@
 This repository contains MATLAB code for performing 1D and 2D Finite-Difference Time-Domain (FDTD) simulations. The simulations model the propagation of electromagnetic waves in various scenarios using the FDTD method. Different customization options are available to modify the simulation parameters and observe the effects on wave propagation.
 
 ## 1D Simulation (fdtd_1d.m)
+
+<img src="1d.gif" alt="1D" width="300">
+
 This MATLAB code performs a 1D Finite-Difference Time-Domain (FDTD) simulation to model the propagation of electromagnetic waves in a lossy dielectric medium. The code is based on Example 1.7 from the book "Sullivan, Dennis M. Electromagnetic Simulation Using the FDTD Method." It provides customization options to modify various parameters and control the simulation process from the code.
 
 ## 2D Simulation (fdtd_2d.m)
+
+<img src="2d.gif" alt="1D" width="300">
+
 The second FDTD simulation is a 2D simulation that models the propagation of electromagnetic waves in a rectangular domain from two coupled circular E-field sources using the same FDTD approach. The simulation parameters and customization options are outlined below.
 
 ## Running the Simulations
